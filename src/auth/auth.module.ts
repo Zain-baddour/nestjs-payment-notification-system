@@ -5,12 +5,14 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { UsersModule } from '@/users/users.module';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RedisModule } from '@/shared/redis/redis.module';
 
 @Global()
 @Module({
   imports: [
     UsersModule,
     ConfigModule,
+    RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

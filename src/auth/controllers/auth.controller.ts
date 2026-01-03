@@ -6,13 +6,16 @@ import {
   HttpStatus,
   UseGuards,
   Request,
-  Get 
+  Headers,
+  Get, 
+  UnauthorizedException
 } from '@nestjs/common';
 import { 
   ApiTags, 
   ApiOperation, 
   ApiResponse, 
-  ApiBearerAuth 
+  ApiBearerAuth,
+  ApiHeader
 } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
@@ -57,9 +60,33 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'User logout' })
-  async logout(@Request() req) {
-    return this.authService.logout(req.user.userId);
+  @ApiOperation({ summary: 'User logout (revokes token)' })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer token to revoke',
+    required: true,
+  })
+  async logout(
+    @Request() req,
+    @Headers('authorization') authHeader: string
+  ) {
+    // استخراج التوكن من الـ header
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      throw new UnauthorizedException('Token not provided');
+    }
+    
+    return this.authService.logout(req.user.sub, token);
+  }
+
+  @Post('logout-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout from all devices' })
+  async logoutAll(@Request() req) {
+    // ⭐ فانكشن إضافية: تسجيل خروج من كل الأجهزة
+    return this.authService.logoutAllDevices(req.user.sub);
   }
   
   @Get('me')

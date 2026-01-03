@@ -48,6 +48,15 @@ export class User {
     @Column({ default: true })
     isActive: boolean;
 
+    @Column({ type: 'timestamp', nullable: true })
+    lastLoginAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    lastLogoutAt: Date;
+
+    @Column({ default: false })
+    forceLogout: boolean;
+
     // ⭐ Eager Loading: يتحمل تلقائياً مع User
     @OneToOne(() => UserProfile, (profile) => profile.user, {
         eager: true,
@@ -74,7 +83,7 @@ export class User {
     updatedAt: Date;
 
     // ⭐ Hooks - تشفير الباسورد قبل الحفظ
-    
+
 
     // ⭐ Method للتحقق من الباسورد
     async validatePassword(password: string): Promise<boolean> {

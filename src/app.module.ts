@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { RedisModule } from './shared/redis/redis.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { AuthModule } from './auth/auth.module';
     // Feature Modules (بس الي اتعملوا)
     UsersModule,
     AuthModule,
+    RedisModule,
+    PaymentsModule,
     
     // ⭐ PaymentsModule والـ NotificationsModule شيلنا مؤقتاً
     // PaymentsModule, 

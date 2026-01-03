@@ -13,9 +13,9 @@ export class UserRepository {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
-   async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     // ⭐️ استدعاء المابير (هو بدو async الآن)
     const userData = await UserMapper.toEntity(createUserDto);
     const user = this.userRepository.create(userData);
@@ -23,19 +23,19 @@ export class UserRepository {
   }
 
   // في UserRepository
-async validatePassword(email: string, password: string): Promise<User | null> {
-  // 1. جيب اليوزر مع الباسوورد
-  const user = await this.findByEmail(email);
-  if (!user) return null;
-  
-  // 2. تحقق من الباسوورد مباشرة (بدون Mapper)
-  const isValid = await UserMapper.validatePassword(password, user.password);
-  if (!isValid) return null;
+  async validatePassword(email: string, password: string): Promise<User | null> {
+    // 1. جيب اليوزر مع الباسوورد
+    const user = await this.findByEmail(email);
+    if (!user) return null;
 
-  // 3. إرجع اليوزر بدون الباسوورد
-  const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword as User;
-}
+    // 2. تحقق من الباسوورد مباشرة (بدون Mapper)
+    const isValid = await UserMapper.validatePassword(password, user.password);
+    if (!isValid) return null;
+
+    // 3. إرجع اليوزر بدون الباسوورد
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
+  }
 
   async findAll(
     page: number = 1,
@@ -43,14 +43,14 @@ async validatePassword(email: string, password: string): Promise<User | null> {
     relations: string[] = []
   ): Promise<{ data: User[]; total: number; page: number; totalPages: number }> {
     const skip = (page - 1) * limit;
-    
+
     const [data, total] = await this.userRepository.findAndCount({
       skip,
       take: limit,
       relations,
       order: { createdAt: 'DESC' },
     });
-    
+
     return {
       data,
       total,
@@ -64,11 +64,11 @@ async validatePassword(email: string, password: string): Promise<User | null> {
       where: { id },
       relations: ['profile'],
     });
-    
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    
+
     return user;
   }
 
@@ -82,17 +82,31 @@ async validatePassword(email: string, password: string): Promise<User | null> {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     // ⭐️ تحديث مع المابير
     const updateData = await UserMapper.toUpdateEntity(updateUserDto);
-    
+
     if (Object.keys(updateData).length > 0) {
       await this.userRepository.update(id, updateData);
     }
-    
+
     return this.findById(id);
   }
 
+
+  async updateLastLogin(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      lastLoginAt: new Date(),
+      forceLogout: false,
+    });
+  }
+
+  async checkForceLogout(userId: string): Promise<boolean> {
+    const user = await this.findById(userId);
+    return user?.forceLogout || false;
+  }
+
+
   async remove(id: string): Promise<void> {
     const result = await this.userRepository.delete(id);
-    
+
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }

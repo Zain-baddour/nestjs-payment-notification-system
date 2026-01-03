@@ -10,17 +10,19 @@ import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
+import { AuthService } from '@/auth/services/auth.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
-    private reflector: Reflector, // ⭐ نضيف Reflector
+    private reflector: Reflector,
+    private authService: AuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // ⭐ تحقق إذا كان الـ endpoint public
+  
     const isPublic = this.reflector.getAllAndOverride<boolean>(
       IS_PUBLIC_KEY,
       [context.getHandler(), context.getClass()]
@@ -38,6 +40,13 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
+
+      const isBlacklisted = await this.authService.isTokenBlacklisted(token);
+      if (isBlacklisted) {
+        throw new UnauthorizedException('Token has been revoked');
+      }
+
+
       const payload = await this.jwtService.verifyAsync(
         token,
         {
